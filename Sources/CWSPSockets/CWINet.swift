@@ -56,12 +56,12 @@ final public class CWINet {
         
         var ifr = ifreq ()
         ifr.ifr_ifru.ifru_addr.sa_family = sa_family_t(AF_INET)
-        //let cString = strdup (name.cString(using: String.Encoding.ascii)!)!
         
-        let cString = name.cString(using: .ascii)!
+        var b = [CChar] (repeating: 0, count: 16)
         
-        ifr.ifr_name = (cString [0], cString [1], cString [2], cString [3], cString [4], cString [5], cString [6], cString [7], cString [8], cString [9], cString [10], cString [11], cString [12], cString [13], cString [14], cString [15])
-                
+        strncpy (&b, name, 16)
+        
+        ifr.ifr_name = (b [0], b [1], b [2], b [3], b [4], b [5], b [6], b [7], b [8], b [9], b [10], b [11], b [12], b [13], b [14], b [15])
                
         let fd = socket(AF_INET, SOCK_DGRAM, 0)
         
