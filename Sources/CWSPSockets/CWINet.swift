@@ -61,66 +61,55 @@ final public class CWINet {
         return _IOC(IOC_INOUT, UInt32 (group.asciiValue!), num, size)
     }
     
-    private static func _interfaceAddressForName (_ name: String, _ requestType: AddressRequestType, _ interfaceAddress: UnsafeMutablePointer<sockaddr>) -> Int {
+    private static func _interfaceAddressForName (_ name: String, _ requestType: AddressRequestType) throws -> String {
         
         var ifr = ifreq ()
         ifr.ifr_ifru.ifru_addr.sa_family = sa_family_t(AF_INET)
         
+        // Copy the name into a padded 16 CChar buffer
         var b = [CChar] (repeating: 0, count: 16)
-        
         strncpy (&b, name, 16)
         
+        // Convert the buffer to a 16 CChar tuple - that's what ifreq needs
         ifr.ifr_name = (b [0], b [1], b [2], b [3], b [4], b [5], b [6], b [7], b [8], b [9], b [10], b [11], b [12], b [13], b [14], b [15])
-               
-        let fd = socket(AF_INET, SOCK_DGRAM, 0)
-        
-//        let SIOCGIFADDR: UInt = 0xc0206921
-//        let SIOCGIFNETMASK: UInt = 0xc0206925
-        
+                       
         let SIOCGIFADDR = _IOWR("i", 33, UInt32(MemoryLayout<ifreq>.size))
         let SIOCGIFNETMASK = _IOWR("i", 37, UInt32(MemoryLayout<ifreq>.size))
 
-        
         let ioRequest : UInt32 = requestType == .ipAddress ? SIOCGIFADDR : SIOCGIFNETMASK;
         
-        let ioctl_res = ioctl(fd, UInt(ioRequest), &ifr)
-        
-        if ioctl_res < 0 {
-            let err = errno
-            let st = String (cString: strerror(err))
-            print (err, " ", st)
-            return Int(ioctl_res)
+        if ioctl(socket(AF_INET, SOCK_DGRAM, 0), UInt(ioRequest), &ifr) < 0 {
+            throw POSIXError (POSIXErrorCode (rawValue: errno)!)
         }
         
-        memcpy (interfaceAddress, &ifr.ifr_ifru.ifru_addr, MemoryLayout<sockaddr>.size)
-        return 0
+        let sin = unsafeBitCast(ifr.ifr_ifru.ifru_addr, to: sockaddr_in.self)
+        let rv = String (cString: inet_ntoa (sin.sin_addr))
+        
+        return rv
+        
+//        let addressPtr = UnsafeMutablePointer<sockaddr>.allocate(capacity: 1)
+//        memcpy (addressPtr, &ifr.ifr_ifru.ifru_addr, MemoryLayout<sockaddr>.size)
+//        let address = addressPtr.move()
+//        return unsafeBitCast(address, to: sockaddr_in.self)
     }
     
     
-    private static func interfaceAddress(forInterfaceWithName interfaceName: String, requestType: AddressRequestType) throws -> sockaddr_in {
-        
-        let addressPtr = UnsafeMutablePointer<sockaddr>.allocate(capacity: 1)
-        let ioctl_res = _interfaceAddressForName(interfaceName, requestType, addressPtr)
-        let address = addressPtr.move()
-        addressPtr.deallocate()
-        
-        if ioctl_res < 0 {
-            throw IFError.IOCTLFailed(errno)
-        } else {
-            return unsafeBitCast(address, to: sockaddr_in.self)
-        }
-    }
+//    private static func interfaceAddress(forInterfaceWithName interfaceName: String, requestType: AddressRequestType) throws -> sockaddr_in {
+//        return try _interfaceAddressForName(interfaceName, requestType)
+//    }
     
     public static func getInterfaceIPAddress (interfaceName: String) throws -> String {
-        let s = try interfaceAddress(forInterfaceWithName: interfaceName, requestType: .ipAddress)
-        let rv = String (cString: inet_ntoa (s.sin_addr))
-        return rv
+        return try _interfaceAddressForName(interfaceName, .ipAddress)
+//        let s = try _interfaceAddressForName(interfaceName, .ipAddress)
+//        let rv = String (cString: inet_ntoa (s.sin_addr))
+//        return rv
     }
     
     public static func getInterfaceNetMask (interfaceName: String) throws -> String {
-        let s = try interfaceAddress(forInterfaceWithName: interfaceName, requestType: .netmask)
-        let rv = String (cString: inet_ntoa (s.sin_addr))
-        return rv
+        return try _interfaceAddressForName(interfaceName, .netmask)
+//        let s = try _interfaceAddressForName(interfaceName, .netmask)
+//        let rv = String (cString: inet_ntoa (s.sin_addr))
+//        return rv
     }
     
     public enum SysctlError:Error {
