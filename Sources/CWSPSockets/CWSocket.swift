@@ -34,6 +34,7 @@ public enum CWSocketProtocol {
     case udp
     case icmp
     case icmpv6
+    case none
     
     var type: Int32 {
         switch (self) {
@@ -41,6 +42,7 @@ public enum CWSocketProtocol {
         case .udp: return SOCK_DGRAM
         case .icmp: return SOCK_DGRAM
         case .icmpv6: return SOCK_DGRAM
+        case .none: return SOCK_DGRAM
         }
     }
     
@@ -50,6 +52,7 @@ public enum CWSocketProtocol {
         case .udp: return IPPROTO_UDP
         case .icmp: return IPPROTO_ICMP
         case .icmpv6: return IPPROTO_ICMPV6
+        case .none: return 0
         }
     }
 }
@@ -551,6 +554,9 @@ final public class CWSocket {
         return DispatchSource.makeWriteSource(fileDescriptor: descriptor, queue: queue)
     }
     
+    public func ioctl (request: UInt32, data: UnsafeMutableRawPointer) throws {
+        try CWSocket.check (Foundation.ioctl(descriptor, UInt (request), data))
+    }
     
     @discardableResult private static func check (_ rv: Int32) throws -> Int32 {
         if rv < 0 {

@@ -1,3 +1,3 @@
 # CWSPSockets
 
-A description of this package.
+Provides async IP Client and server using native sockets

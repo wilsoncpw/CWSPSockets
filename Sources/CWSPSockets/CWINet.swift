@@ -45,18 +45,25 @@ final public class CWINet {
     private enum AddressRequestType {
         case ipAddress
         case netmask
-    }
-    
-    // From BDS ioccom.h
-    // Macro to create ioctl request
-    private static func _IOC (_ io: UInt32, _ group: UInt32, _ num: UInt32, _ len: UInt32) -> UInt32 {
-        let rv = io | (( len & UInt32(IOCPARM_MASK)) << 16) | ((group << 8) | num)
-        return rv
-    }
-    
-    // Macro to create read/write IOrequest
-    private static func _IOWR (_ group: Character , _ num : UInt32, _ size: UInt32) -> UInt32 {
-        return _IOC(IOC_INOUT, UInt32 (group.asciiValue!), num, size)
+        
+        // From BDS ioccom.h
+        // Macro to create ioctl request
+        func _IOC (_ io: UInt32, _ group: UInt32, _ num: UInt32, _ len: UInt32) -> UInt32 {
+            let rv = io | (( len & UInt32(IOCPARM_MASK)) << 16) | ((group << 8) | num)
+            return rv
+        }
+        
+        // Macro to create read/write IOrequest
+        func _IOWR (_ group: Character , _ num : UInt32, _ size: UInt32) -> UInt32 {
+            return _IOC(IOC_INOUT, UInt32 (group.asciiValue!), num, size)
+        }
+        
+        var ioRequest: UInt32 {
+            switch self {
+            case .ipAddress: return _IOWR("i", 33, UInt32(MemoryLayout<ifreq>.size))    // SIOCGIFADDR from sockio.h
+            case .netmask: return _IOWR("i", 37, UInt32(MemoryLayout<ifreq>.size))      // SIOCGIFNETMASK
+            }
+        }
     }
     
     private static func _interfaceAddressForName (_ name: String, _ requestType: AddressRequestType) throws -> String {
@@ -73,16 +80,7 @@ final public class CWINet {
         // Convert the buffer to a 16 CChar tuple - that's what ifreq needs
         ifr.ifr_name = (b [0], b [1], b [2], b [3], b [4], b [5], b [6], b [7], b [8], b [9], b [10], b [11], b [12], b [13], b [14], b [15])
         
-        let ioRequest: UInt32 = {
-            switch requestType {
-            case .ipAddress: return _IOWR("i", 33, UInt32(MemoryLayout<ifreq>.size))    // Magic number SIOCGIFADDR - see sockio.h
-            case .netmask: return _IOWR("i", 37, UInt32(MemoryLayout<ifreq>.size))      // Magic number SIOCGIFNETMASK
-            }
-        } ()
-        
-        if ioctl(socket(AF_INET, SOCK_DGRAM, 0), UInt(ioRequest), &ifr) < 0 {
-            throw POSIXError (POSIXErrorCode (rawValue: errno) ?? POSIXErrorCode.EINVAL)
-        }
+        try CWSocket (family: .v4, proto: .none).ioctl(request: requestType.ioRequest, data: &ifr)
         
         let sin = unsafeBitCast(ifr.ifr_ifru.ifru_addr, to: sockaddr_in.self)
         let rv = String (cString: inet_ntoa (sin.sin_addr))
