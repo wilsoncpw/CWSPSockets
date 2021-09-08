@@ -41,12 +41,7 @@ final public class CWINet {
         freeifaddrs(ifaddr)
         return addresses
     }
-    
-    private enum IFError:Error {
-        case IOCTLFailed(Int32)
-        case StringIsNotAnASCIIString
-    }
-    
+
     private enum AddressRequestType {
         case ipAddress
         case netmask
