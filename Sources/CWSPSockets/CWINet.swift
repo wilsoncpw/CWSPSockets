@@ -52,6 +52,15 @@ final public class CWINet {
         case netmask
     }
     
+    private static func _IOC (_ io: UInt32, _ group: UInt32, _ num: UInt32, _ len: UInt32) -> UInt32 {
+        let rv = io | (( len & UInt32(IOCPARM_MASK)) << 16) | ((group << 8) | num)
+        return rv
+    }
+    
+    private static func _IOWR (_ group: Character , _ num : UInt32, _ size: UInt32) -> UInt32 {
+        return _IOC(IOC_INOUT, UInt32 (group.asciiValue!), num, size)
+    }
+    
     private static func _interfaceAddressForName (_ name: String, _ requestType: AddressRequestType, _ interfaceAddress: UnsafeMutablePointer<sockaddr>) -> Int {
         
         var ifr = ifreq ()
@@ -65,12 +74,16 @@ final public class CWINet {
                
         let fd = socket(AF_INET, SOCK_DGRAM, 0)
         
-        let SIOCGIFADDR: UInt = 0xc0206921
-        let SIOCGIFNETMASK: UInt = 0xc0206925
+//        let SIOCGIFADDR: UInt = 0xc0206921
+//        let SIOCGIFNETMASK: UInt = 0xc0206925
         
-        let ioRequest : UInt = requestType == .ipAddress ? SIOCGIFADDR : SIOCGIFNETMASK;
+        let SIOCGIFADDR = _IOWR("i", 33, UInt32(MemoryLayout<ifreq>.size))
+        let SIOCGIFNETMASK = _IOWR("i", 37, UInt32(MemoryLayout<ifreq>.size))
+
         
-        let ioctl_res = ioctl(fd, ioRequest, &ifr)
+        let ioRequest : UInt32 = requestType == .ipAddress ? SIOCGIFADDR : SIOCGIFNETMASK;
+        
+        let ioctl_res = ioctl(fd, UInt(ioRequest), &ifr)
         
         if ioctl_res < 0 {
             let err = errno
