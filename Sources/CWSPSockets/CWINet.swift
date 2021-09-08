@@ -73,6 +73,9 @@ final public class CWINet {
         let ioctl_res = ioctl(fd, ioRequest, &ifr)
         
         if ioctl_res < 0 {
+            let err = errno
+            let st = String (cString: strerror(err))
+            print (err, " ", st)
             return Int(ioctl_res)
         }
         
