@@ -52,6 +52,7 @@ final public class CWINet {
         case netmask
     }
     
+    // From BDS ioccom.h
     private static func _IOC (_ io: UInt32, _ group: UInt32, _ num: UInt32, _ len: UInt32) -> UInt32 {
         let rv = io | (( len & UInt32(IOCPARM_MASK)) << 16) | ((group << 8) | num)
         return rv
@@ -66,17 +67,18 @@ final public class CWINet {
         var ifr = ifreq ()
         ifr.ifr_ifru.ifru_addr.sa_family = sa_family_t(AF_INET)
         
-        // Copy the name into a padded 16 CChar buffer
+        // Copy the name into a zero padded 16 CChar buffer
         var b = [CChar] (repeating: 0, count: 16)
         strncpy (&b, name, 16)
         
         // Convert the buffer to a 16 CChar tuple - that's what ifreq needs
         ifr.ifr_name = (b [0], b [1], b [2], b [3], b [4], b [5], b [6], b [7], b [8], b [9], b [10], b [11], b [12], b [13], b [14], b [15])
-                       
-        let SIOCGIFADDR = _IOWR("i", 33, UInt32(MemoryLayout<ifreq>.size))
-        let SIOCGIFNETMASK = _IOWR("i", 37, UInt32(MemoryLayout<ifreq>.size))
-
-        let ioRequest : UInt32 = requestType == .ipAddress ? SIOCGIFADDR : SIOCGIFNETMASK;
+        
+        let ioRequest: UInt32
+        switch requestType {
+        case .ipAddress: ioRequest = _IOWR("i", 33, UInt32(MemoryLayout<ifreq>.size))       // Magic number SIOCGIFADDR
+        case .netmask: ioRequest = _IOWR("i", 37, UInt32(MemoryLayout<ifreq>.size))         // Magic number SIOCGIFNETMASKS
+        }
         
         if ioctl(socket(AF_INET, SOCK_DGRAM, 0), UInt(ioRequest), &ifr) < 0 {
             throw POSIXError (POSIXErrorCode (rawValue: errno)!)
@@ -86,30 +88,14 @@ final public class CWINet {
         let rv = String (cString: inet_ntoa (sin.sin_addr))
         
         return rv
-        
-//        let addressPtr = UnsafeMutablePointer<sockaddr>.allocate(capacity: 1)
-//        memcpy (addressPtr, &ifr.ifr_ifru.ifru_addr, MemoryLayout<sockaddr>.size)
-//        let address = addressPtr.move()
-//        return unsafeBitCast(address, to: sockaddr_in.self)
     }
-    
-    
-//    private static func interfaceAddress(forInterfaceWithName interfaceName: String, requestType: AddressRequestType) throws -> sockaddr_in {
-//        return try _interfaceAddressForName(interfaceName, requestType)
-//    }
     
     public static func getInterfaceIPAddress (interfaceName: String) throws -> String {
         return try _interfaceAddressForName(interfaceName, .ipAddress)
-//        let s = try _interfaceAddressForName(interfaceName, .ipAddress)
-//        let rv = String (cString: inet_ntoa (s.sin_addr))
-//        return rv
     }
     
     public static func getInterfaceNetMask (interfaceName: String) throws -> String {
         return try _interfaceAddressForName(interfaceName, .netmask)
-//        let s = try _interfaceAddressForName(interfaceName, .netmask)
-//        let rv = String (cString: inet_ntoa (s.sin_addr))
-//        return rv
     }
     
     public enum SysctlError:Error {
