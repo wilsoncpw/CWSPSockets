@@ -69,9 +69,10 @@ final public class CWINet {
         let ifNameSize = Int (IFNAMSIZ)
         var b = [CChar] (repeating: 0, count: ifNameSize)
         strncpy (&b, name, ifNameSize)
+        ifr.ifr_name = unsafeBitCast(b, to: (CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar).self)
         
         // Convert the buffer to a 16 CChar tuple - that's what ifreq needs
-        ifr.ifr_name = (b [0], b [1], b [2], b [3], b [4], b [5], b [6], b [7], b [8], b [9], b [10], b [11], b [12], b [13], b [14], b [15])
+//        ifr.ifr_name = (b [0], b [1], b [2], b [3], b [4], b [5], b [6], b [7], b [8], b [9], b [10], b [11], b [12], b [13], b [14], b [15])
         
         let ioRequest: UInt32 = {
             switch requestType {
