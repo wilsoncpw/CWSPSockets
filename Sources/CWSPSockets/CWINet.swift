@@ -65,8 +65,8 @@ final public class CWINet {
                
         let fd = socket(AF_INET, SOCK_DGRAM, 0)
         
-        let SIOCGIFADDR: UInt = 0x8915
-        let SIOCGIFNETMASK: UInt = 0x891B
+        let SIOCGIFADDR: UInt = 0xc0206921
+        let SIOCGIFNETMASK: UInt = 0xc0206925
         
         let ioRequest : UInt = requestType == .ipAddress ? SIOCGIFADDR : SIOCGIFNETMASK;
         
