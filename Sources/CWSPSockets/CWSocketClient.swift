@@ -66,7 +66,7 @@ final public class CWSocketClient: CWSocketConnectionDelegate {
     ///   - port: Portto connect to
     ///   - family: The address family - eg .v4
     ///   - proto: The protociol
-    public func connect (host: String, port: in_port_t, family: CWSocketFamily, proto: CWSocketProtocol, timeout: TimeInterval?) throws {
+    public func connect (host: String, port: in_port_t, family: CWSocketFamily, proto: CWSocketProtocol, timeout: TimeInterval? = nil) throws {
         guard proto == .tcp || proto == .udp else {
             throw POSIXError (POSIXErrorCode.EPROTONOSUPPORT)
         }
