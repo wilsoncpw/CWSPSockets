@@ -43,6 +43,7 @@ final public class CWSocketConnection {
     private let sendBufferSize: Int
     
     public var context: String?
+    public var sessionInfo: AnyObject?
     public var error: Error?
     
     //-----------------------------------------------------------------------------
