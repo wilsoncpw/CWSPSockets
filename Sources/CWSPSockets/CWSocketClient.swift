@@ -39,7 +39,7 @@ public extension DispatchSource {
 final public class CWSocketClient: CWSocketConnectionDelegate {
     
     let asyncQueue = DispatchQueue (label: "CWSocketClient")
-    var connections = [CWSocketConnection] ()
+    internal (set) public var connections = [CWSocketConnection] ()
     public weak var delegate: CWSocketClientDelegate?
     public var connectionCount: Int { return connections.count }
     
