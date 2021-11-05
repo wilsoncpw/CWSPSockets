@@ -230,4 +230,6 @@ final public class CWSocketConnection {
     public func readAllData () -> Data {
         return readBuffer.allData()
     }
+    
+    public var connected: Bool { return socket.isConnected }
 }
