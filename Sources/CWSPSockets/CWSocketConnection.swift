@@ -232,4 +232,6 @@ final public class CWSocketConnection {
     }
     
     public var connected: Bool { return socket.isConnected }
+    
+    public var remoteIP: String { return (try? socket.remoteIP()) ?? ""}
 }
