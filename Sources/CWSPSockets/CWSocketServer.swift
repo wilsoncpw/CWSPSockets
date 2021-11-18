@@ -149,9 +149,9 @@ final public class CWSocketServer: CWSocketConnectionDelegate {
     ///
     /// - Parameter context: The context to find
     /// - Returns: The first connection with a match contet - or nil
-    public func connectionWithContext (context: String) -> CWSocketConnection? {
+    public func connectionWithIdentifier (_ identifier: String) -> CWSocketConnection? {
         return connections.first(where: ) { connection in
-            connection.context == context
+            connection.identifier == identifier
         }
     }
     
