@@ -232,6 +232,8 @@ final public class CWSocketConnection {
     }
     
     public var connected: Bool { return socket.isConnected }
+        
+    public lazy var remoteIP: String = { return (try? socket.remoteIP()) ?? "?"} ()
     
-    public var remoteIP: String { return (try? socket.remoteIP()) ?? ""}
+    public lazy var remotePort: UInt16 = { return (try? socket.remotePort()) ?? 0} ()
 }

@@ -86,6 +86,8 @@ final public class CWSocket {
     private (set) public var _descriptor : Int32 = -1
     private var address: CWSocketAddress?
     private var currentReadTimeout: timeval?
+    private var currentRemoteIP: String?
+    private var currentRemotePort: UInt16?
     
     public let family : CWSocketFamily
     public let proto : CWSocketProtocol
@@ -190,14 +192,12 @@ final public class CWSocket {
         }
         currentReadTimeout = nil
         isConnected = false
+        currentRemoteIP = nil
+        currentRemotePort = nil
     }
     
-    //---------------------------------------------------------
-    /// func remoteIP
-    ///
-    /// - Returns: The remote IP address
-    /// - Throws: POSIX error
-    public func remoteIP () throws ->String {
+    private func getRemoteValues () throws {
+        guard currentRemoteIP == nil else { return }
         if let address = address {
             var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
             var servBuffer = [CChar](repeating: 0, count: Int(NI_MAXSERV))
@@ -208,10 +208,27 @@ final public class CWSocket {
                 throw GAIError (rawValue:rv)
             }
             
-            return String(cString: hostBuffer)
+            currentRemoteIP = String(cString: hostBuffer)
+            let st = String(cString: servBuffer)
+            currentRemotePort = UInt16 (st) ?? 0
         } else {
             throw GAIError.EAI_NONAME
         }
+    }
+    
+    //---------------------------------------------------------
+    /// func remoteIP
+    ///
+    /// - Returns: The remote IP address
+    /// - Throws: POSIX error
+    public func remoteIP () throws -> String {
+        try getRemoteValues()
+        return currentRemoteIP ?? "?"
+    }
+    
+    public func remotePort () throws -> UInt16 {
+        try getRemoteValues()
+        return currentRemotePort ?? 0
     }
     
     //---------------------------------------------------------
