@@ -42,8 +42,7 @@ final public class CWSocketConnection {
     private var writeSourceResumed = false
     private let sendBufferSize: Int
     
-    public var context: String?
-    public weak var sessionInfo: AnyObject?
+    public var context: AnyObject?
     public var error: Error?
     
     //-----------------------------------------------------------------------------
